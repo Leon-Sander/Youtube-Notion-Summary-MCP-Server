@@ -1,0 +1,4 @@
+mcp[cli]
+youtube-transcript-api
+requests
+beautifulsoup4
