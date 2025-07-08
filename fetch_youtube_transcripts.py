@@ -14,6 +14,19 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def get_proxy_config():
+    """Get proxy configuration from environment variables."""
+    proxy_url = os.getenv("PROXY_URL")  # e.g., "http://username:password@proxy-server:port"
+    if proxy_url:
+        logger.info("🌐 Using proxy for YouTube requests")
+        return {
+            "http": proxy_url,
+            "https": proxy_url
+        }
+    else:
+        logger.info("🚫 No proxy configured - YouTube may block requests")
+        return None
+
 class SimpleTokenVerifier(TokenVerifier):
     """Simple token verifier for single-user scenarios"""
     
@@ -52,13 +65,18 @@ def fetch_youtube_transcript(url: str) -> dict:
     """Fetch transcripts of a youtube video."""
     try:
         video_id = url.split("v=")[-1]
-        ytt_api = YouTubeTranscriptApi()
+        proxies = get_proxy_config()
+        if proxies:
+            ytt_api = YouTubeTranscriptApi(proxies=proxies)
+        else:
+            ytt_api = YouTubeTranscriptApi()
+            
         fetched_transcript = ytt_api.fetch(video_id)
         full_text = " ".join(snippet.text for snippet in fetched_transcript)
         video_title = get_video_title(url)
         return {"transcript": full_text, "title": video_title}
     except Exception as e:
-        logger.error(f"Error fetching transcript for url {url}, {str(e)}")
+        logger.error(f"❌ Error fetching transcript for url {url}: {str(e)}")
         return {"error": f"Error fetching transcript for url {url}, {str(e)}"}
 
 @mcp.tool()
@@ -125,14 +143,20 @@ def save_to_notion(link: str, title: str, summary: str) -> dict:
 def get_video_title(url: str) -> str:
     """Retrieve the title of a youtube video"""
     try:
-        response = requests.get(url)
+        proxies = get_proxy_config()
+        
+        if proxies:
+            response = requests.get(url, proxies=proxies)
+        else:
+            response = requests.get(url)
+            
         html_content = response.text
         soup = BeautifulSoup(html_content, 'html.parser')
         title_tag = soup.find('meta', property='og:title')
         video_title = title_tag['content'] if title_tag else 'Title not found'
         return video_title
     except Exception as e:
-        logger.error(f"Error fetching video title for url {url}, {str(e)}")
+        logger.error(f"❌ Error fetching video title for url {url}: {str(e)}")
         return "Error fetching video title"
 
 if __name__ == "__main__":
@@ -140,15 +164,17 @@ if __name__ == "__main__":
     parser.add_argument("--transport", choices=["stdio", "http"], default="stdio", help="Transport type")
     parser.add_argument("--host", default="localhost", help="Host for HTTP transport")
     parser.add_argument("--port", type=int, default=8000, help="Port for HTTP transport")
+
     
     args = parser.parse_args()
+    
+    get_proxy_config()
 
     if args.transport == "http":
         logger.info(f"🚀 Starting HTTP server on {args.host}:{args.port}")
         logger.info("🔐 Authentication: Bearer token required")
         logger.info("📋 Required scopes: youtube:read, notion:write")
         logger.info("🛠️  Available tools: fetch_youtube_transcript, save_to_notion")
-        logger.info("🔑 Set MCP_API_KEY environment variable for authentication")
         mcp.run(transport="streamable-http")
     else:
         logger.info("📟 Starting stdio server (no auth required)")

@@ -9,17 +9,31 @@ A simple MCP server that fetches YouTube video transcripts and saves them to Not
 - 💾 Save summaries to Notion
 - 🔐 Secure HTTP transport with authentication
 - 🐳 Docker ready for easy deployment
+- 🌐 Proxy support for cloud deployments
 
 ## Quick Start
 
 ### 1. Environment Setup
 
-Create a `.env` file:
+**For Local Development** - Create a `.env` file:
 ```env
 MCP_API_KEY=your-secret-api-key-here
 NOTION_API_TOKEN=your-notion-integration-token
 NOTION_DATABASE_ID=your-notion-database-id
+
+# Optional: Proxy for cloud deployments (required for Render, AWS, etc.)
+PROXY_URL=http://username:password@proxy-server:port
 ```
+
+**⚠️ Cloud Platform Note:** YouTube blocks most cloud provider IPs (AWS, Google Cloud, Railway, etc.). You need a proxy service for reliable operation.
+
+### 🆓 Free Proxy Setup (Webshare)
+
+1. **Sign up at Webshare:** https://www.webshare.io/
+2. **Get 10 free proxies** (no credit card required)
+3. **Find your proxy details** in their dashboard
+4. **Format:** `http://username:password@proxy-endpoint:port`
+5. **Add to Railway Variables:** `PROXY_URL` = your webshare proxy URL
 
 ### 2. Run with Docker
 
