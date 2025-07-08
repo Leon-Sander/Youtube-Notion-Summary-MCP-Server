@@ -1,53 +1,69 @@
-# YouTube Transcript MCP
+# YouTube Transcript MCP Server
 
-A simple MCP server that fetches the transcript and title for a given YouTube video URL.
+A simple MCP server that fetches YouTube video transcripts and saves them to Notion.
 
 ## Features
 
-- Fetches the full text transcript of a YouTube video.
-- Retrieves the video's title.
-- Exposes this functionality as an MCP tool.
+- 🎥 Fetch full text transcripts from YouTube videos
+- 📝 Get video titles automatically  
+- 💾 Save summaries to Notion
+- 🔐 Secure HTTP transport with authentication
+- 🐳 Docker ready for easy deployment
 
-## Installation
+## Quick Start
 
-This project uses `uv` for package management.
+### 1. Environment Setup
 
-Install the dependencies from within the `youtube_transcript_mcp` directory:
-```bash
-uv venv
-source .venv/bin/activate
-uv add -r requirements.txt
+Create a `.env` file:
+```env
+MCP_API_KEY=your-secret-api-key-here
+NOTION_API_TOKEN=your-notion-integration-token
+NOTION_DATABASE_ID=your-notion-database-id
 ```
 
-## Usage
+### 2. Run with Docker
 
-You can run the MCP server directly from your terminal or integrate it with an MCP client like Cursor.
-
-### Running from the terminal
-
-From the project's root directory:
 ```bash
-uv run python fetch_youtube_transcripts.py
+# Build the image
+docker build -t youtube-transcript-mcp .
+
+# Run the server
+docker run -p 8000:8000 -v $(pwd)/.env:/app/.env youtube-transcript-mcp
 ```
 
-This will start the MCP server with `stdio` transport.
+The server will be available at `http://localhost:8000`
 
-### Adding to Cursor
+### 3. Configure MCP Client
 
-To integrate this tool with Cursor, add the following configuration to your `settings.json` file under `mcpServers`:
+Add to your MCP client configuration (e.g., `.cursor/mcp.json`):
 
 ```json
-"fetch_youtube_transcription": {
-    "command": "uv",
-    "args": [
-        "--directory",
-        "/path/to/your/project/youtube_transcript_mcp/youtube_transcript_mcp",
-        "run",
-        "fetch_youtube_transcripts.py"
-    ]
+{
+  "mcpServers": {
+    "youtube-notion-server": {
+      "type": "streamable-http",
+      "url": "http://localhost:8000/mcp",
+      "headers": {
+        "Authorization": "Bearer your-secret-api-key-here"
+      }
+    }
+  }
 }
 ```
 
-**Note:** Make sure to replace `"/path/to/your/project/youtube_transcript_mcp/youtube_transcript_mcp"` with the absolute path to the inner `youtube_transcript_mcp` directory on your machine.
+## Available Tools
 
-Once configured, you can call the `fetch_youtube_transcript` tool with a YouTube video URL from within Cursor or other MCP clients.
+- `fetch_youtube_transcript(url)` - Get transcript and title from YouTube video
+- `save_to_notion(link, title, summary)` - Save video info to Notion database
+
+## Development
+
+Install dependencies:
+```bash
+uv sync
+```
+
+Run locally:
+```bash
+uv run fetch_youtube_transcripts.py --transport http
+```
