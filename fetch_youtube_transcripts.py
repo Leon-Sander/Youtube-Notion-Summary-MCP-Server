@@ -14,6 +14,26 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def debug_env_vars():
+    """Debug function to check which environment variables are loaded"""
+    env_vars_to_check = [
+        "MCP_API_KEY", 
+        "NOTION_DATABASE_ID", 
+        "NOTION_API_TOKEN"
+    ]
+    
+    logger.info("🔍 Environment Variables Status:")
+    for var in env_vars_to_check:
+        value = os.getenv(var)
+        if value:
+            # Show first 8 characters for security
+            masked_value = value[:4] + "..." if len(value) > 4 else value
+            logger.info(f"  ✅ {var}: {masked_value}")
+        else:
+            logger.info(f"  ❌ {var}: Not set")
+    
+    logger.info("🌍 Testing Railway platform for YouTube API access...")
+
 class SimpleTokenVerifier(TokenVerifier):
     """Simple token verifier for single-user scenarios"""
     
@@ -143,6 +163,8 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     
+    debug_env_vars()
+
     if args.transport == "http":
         logger.info(f"🚀 Starting HTTP server on {args.host}:{args.port}")
         logger.info("🔐 Authentication: Bearer token required")
