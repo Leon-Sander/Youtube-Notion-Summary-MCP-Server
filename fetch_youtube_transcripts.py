@@ -66,13 +66,18 @@ def fetch_youtube_transcript(url: str) -> dict:
     try:
         video_id = url.split("v=")[-1]
         proxies = get_proxy_config()
+        
+        # Use proxies in the list_transcripts method, not constructor
         if proxies:
-            ytt_api = YouTubeTranscriptApi(proxies=proxies)
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id, proxies=proxies)
         else:
-            ytt_api = YouTubeTranscriptApi()
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
             
-        fetched_transcript = ytt_api.fetch(video_id)
-        full_text = " ".join(snippet.text for snippet in fetched_transcript)
+        # Get the first available transcript
+        transcript = transcript_list.find_transcript(['en'])
+        fetched_transcript = transcript.fetch()
+        
+        full_text = " ".join(item['text'] for item in fetched_transcript)
         video_title = get_video_title(url)
         return {"transcript": full_text, "title": video_title}
     except Exception as e:
@@ -164,11 +169,8 @@ if __name__ == "__main__":
     parser.add_argument("--transport", choices=["stdio", "http"], default="stdio", help="Transport type")
     parser.add_argument("--host", default="localhost", help="Host for HTTP transport")
     parser.add_argument("--port", type=int, default=8000, help="Port for HTTP transport")
-
     
     args = parser.parse_args()
-    
-    get_proxy_config()
 
     if args.transport == "http":
         logger.info(f"🚀 Starting HTTP server on {args.host}:{args.port}")
